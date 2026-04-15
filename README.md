@@ -16,7 +16,7 @@ Larger Request:
 ``` bash
 srun --account=snazaria_1817 --partition=gpu --gpus=a40:1 --cpus-per-task=8 --mem=32G --pty bash
 ```
-#### 3. clone this
+### 3. clone this
 ```bash
 git clone https://github.com/emaanh/paged-attention.git
 cd paged-attention
