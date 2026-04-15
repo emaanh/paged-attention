@@ -8,11 +8,11 @@ connect to vpn.usc.edu
 ssh <username>@discovery.usc.edu
 ```
 ### 2. request gpu node
-Smaller Request:
+small request:
 ```bash
 srun --account=snazaria_1817 --partition=gpu --gpus=1 --cpus-per-task=2 --mem=8G --pty bash
 ```
-Larger Request:
+large request:
 ``` bash
 srun --account=snazaria_1817 --partition=gpu --gpus=a40:1 --cpus-per-task=8 --mem=32G --pty bash
 ```
@@ -20,13 +20,26 @@ srun --account=snazaria_1817 --partition=gpu --gpus=a40:1 --cpus-per-task=8 --me
 ```bash
 git clone https://github.com/emaanh/paged-attention.git
 cd paged-attention
-git switch emaan/testing_cuda
 ```
 
 ### 4. load modules & build
 ```bash
 bash setup.sh
-bash build.sh
+bash easy_build.sh
+```
+
+### 4.5 rebuilding 
+if you have moved files or created new ones, update ```CMakeLists.txt```.
+```bash
+mkdir -p build
+cd build
+cmake ..
+make
+```
+if you have modified files
+```bash
+cd build
+make
 ```
 
 ### 5. run
