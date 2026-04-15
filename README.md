@@ -31,6 +31,5 @@ bash build.sh
 
 ### 5. run
 ```bash 
-cd build
-./test
+./build/test
 ```
