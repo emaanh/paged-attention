@@ -9,7 +9,7 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 set(CMAKE_CUDA_ARCHITECTURES native)
 
-add_executable(test src/main.cpp src/kernel.cu)
+add_executable(test src/test/main.cpp src/test/kernel.cu)
 
 target_link_libraries(test PRIVATE CUDA::cudart)
 
