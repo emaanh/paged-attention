@@ -8,9 +8,7 @@
 #include "allocator/block_allocator.hpp"
 #include "attention/naive_attention.cuh"
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 static void cuda_check(cudaError_t err, const char* msg) {
     if (err != cudaSuccess) {
         fprintf(stderr, "CUDA error [%s]: %s\n", msg, cudaGetErrorString(err));
@@ -18,9 +16,7 @@ static void cuda_check(cudaError_t err, const char* msg) {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Block allocator smoke test
-// ---------------------------------------------------------------------------
 static void test_block_allocator() {
     printf("=== BlockAllocator smoke test ===\n");
 
@@ -48,7 +44,6 @@ static void test_block_allocator() {
     printf("\n");
 }
 
-// ---------------------------------------------------------------------------
 // Naive attention smoke test
 //
 // Configuration:
@@ -59,7 +54,6 @@ static void test_block_allocator() {
 // V is all-ones.
 //
 // Expected: softmax over uniform scores → output ≈ all-ones.
-// ---------------------------------------------------------------------------
 static void test_naive_attention() {
     printf("=== Naive attention smoke test ===\n");
 
