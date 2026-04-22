@@ -1,13 +1,16 @@
 #include "cpu_attention.hpp"
 #include <cmath>
+#include <vector>
+#include <iostream>
+#include <print>
 
 void softmax(std::vector<float>& v, float max_val) {
     float sum = 0;
-    for(int i = 0; i < v.size(); i++) {
+    for(size_t i = 0; i < v.size(); i++) {
         v[i] = std::exp(v[i]-max_val);
         sum += v[i];
     }
-    for(int i = 0; i < v.size(); i++) {
+    for(size_t i = 0; i < v.size(); i++) {
         v[i] /= sum;
     }
 }
@@ -32,20 +35,20 @@ void cpu_attention(const float* K, const float* V, const float* q, float* out, i
 
     for(int i = 0; i < T; i++) {
         float sum = 0;
-        // sum = dot(q, 0, k, i*d, d);
+        // sum = dot(q, 0, K, i*d, d);
         for(int j = 0; j < d; j++) {
-            sum += q[j] * k[i*d+j];
+            sum += q[j] * K[i*d+j];
         }
         sum *= dim_scale;
-        max_score = max(max_score, sum);
+        if(sum > max_score) max_score = sum;
         scores[i] = sum;
     }
     softmax(scores, max_score);
-
+    
     for(int j = 0; j < d; j++) {
         float sum = 0;
         for(int i = 0; i < T; i++) {
-            sum += scores[i] * v[i*d +j];
+            sum += scores[i] * V[i*d +j];
         }
         out[j] = sum;
     }
