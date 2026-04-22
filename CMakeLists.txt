@@ -1,31 +1,23 @@
-# cmake_minimum_required(VERSION 3.29) #version of CARC cmake module.
-# project(paged_attention LANGUAGES CXX CUDA)
-# find_package(CUDAToolkit REQUIRED)
-
-# set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(CMAKE_CUDA_STANDARD 17)
-# set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-
-# set(CMAKE_CUDA_ARCHITECTURES native)
-
-# add_executable(test src/main.cpp src/test/kernel.cu)
-
-# target_link_libraries(test PRIVATE CUDA::cudart)
-
-# target_compile_options(test PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler=-Wall>)
-
-
 cmake_minimum_required(VERSION 3.29)
-project(paged_attention LANGUAGES CXX)
+project(paged_attention LANGUAGES CXX CUDA)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_ARCHITECTURES native)
+
+find_package(CUDAToolkit REQUIRED)
 
 #shared library
-add_library(attention STATIC src/attention/cpu_attention.cpp)
+add_library(attention STATIC
+    src/attention/cpu_attention.cpp
+    src/attention/naive_attention.cu
+)
 target_include_directories(attention PUBLIC src/attention)
-target_compile_options(attention PRIVATE -Wall -Wextra -pedantic)
+# -pedantic confuses nvcc; restrict warning flags to C++ sources only.
+target_compile_options(attention PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -pedantic>)
+target_link_libraries(attention PRIVATE CUDA::cudart)
 
 #testing driver: adds a main to the shared library to make it runnable
 add_executable(dev src/main.cpp)
