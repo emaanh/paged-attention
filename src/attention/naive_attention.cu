@@ -34,16 +34,6 @@ void naive_attention(const float* K, const float* V, const float* q, float* out,
     }
 
     {
-        std::vector<float> scores(T);
-        CUDA_CHECK(cudaMemcpy(scores.data(), d_scores, sizeof(float) * T, cudaMemcpyDeviceToHost));
-        printf("scores (T=%d): [", T);
-        for (int i = 0; i < T; i++) {
-            printf("%f%s", scores[i], i + 1 == T ? "" : ", ");
-        }
-        printf("]\n");
-    }
-
-    {
         const int block = 128;
         const int grid  = 1;
         assert((block & (block - 1)) == 0); // tree reduction assumes power-of-2 block
@@ -53,21 +43,11 @@ void naive_attention(const float* K, const float* V, const float* q, float* out,
     }
 
     {
-        std::vector<float> scores(T);
-        CUDA_CHECK(cudaMemcpy(scores.data(), d_scores, sizeof(float) * T, cudaMemcpyDeviceToHost));
-        printf("scores (T=%d): [", T);
-        for (int i = 0; i < T; i++) {
-            printf("%f%s", scores[i], i + 1 == T ? "" : ", ");
-        }
-        printf("]\n");
+        const int block = 128;
+        const int grid  = (d + block - 1) / block;
+        compute_output<<<grid, block>>>(d_scores, d_V, d_out, T, d);
+        CUDA_CHECK(cudaGetLastError());
     }
-
-    // {
-    //     const int block = 128;
-    //     const int grid  = (d + block - 1) / block;
-    //     compute_output<<<grid, block>>>(d_scores, d_V, d_out, T, d);
-    //     CUDA_CHECK(cudaGetLastError());
-    // }
 
     CUDA_CHECK(cudaMemcpy(out, d_out, sizeof(float) * d, cudaMemcpyDeviceToHost));
 
@@ -141,4 +121,18 @@ __global__ void compute_scores(const float* K, const float* q, float* scores, in
     for (int token = thread_id; token < T; token += num_threads) {
         scores[token] *= inv_sum;
     }
+ }
+
+ __global__ void compute_output(const float* d_scores, const float* d_V, float* d_out, int T, int d) {
+    //64 threads per block. d total
+    //each thread owns one value of out. 
+
+    int thread_dim = blockIdx.x * blockDim.x + threadIdx.x;
+    if(thread_dim >= d) return;
+
+    float sum = 0;
+    for(int i = 0; i < T; i++) {
+        sum += d_scores[i] * d_V[i*d + thread_dim];
+    }
+    d_out[thread_dim] = sum;
  }
