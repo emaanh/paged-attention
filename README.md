@@ -24,7 +24,7 @@ cd paged-attention
 
 ### 4. load modules & build
 ```bash
-bash setup.sh
+source setup.sh
 bash easy_build.sh
 ```
 

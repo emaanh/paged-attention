@@ -2,7 +2,6 @@
 #include <cmath>
 #include <vector>
 #include <iostream>
-#include <print>
 
 void softmax(std::vector<float>& v, float max_val) {
     float sum = 0;
