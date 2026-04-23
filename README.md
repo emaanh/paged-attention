@@ -24,7 +24,7 @@ cd paged-attention
 
 ### 4. load modules & build
 ```bash
-bash setup.sh
+source setup.sh
 bash easy_build.sh
 ```
 
@@ -42,7 +42,16 @@ cd build
 make
 ```
 
-### 5. run
+### 5.1 run unit tests:
 ```bash 
-./build/test
+./build/unit_tests
 ```
+
+### 5.2 run main (only use for development):
+```bash 
+./build/dev
+```
+
+## code structure
+### testing:
+Design tests for GPU implmentations and compare them to CPU implementations. 
