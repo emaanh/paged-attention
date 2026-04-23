@@ -34,22 +34,23 @@ void naive_attention(const float* K, const float* V, const float* q, float* out,
     }
 
     {
+        const int block = 128;
+        const int grid  = 1;
+        assert((block & (block - 1)) == 0); // tree reduction assumes power-of-2 block
+        const size_t shared_memory = sizeof(float) * block;
+        softmax_kernel<<<grid, block, shared_memory>>>(d_scores, T);
+        CUDA_CHECK(cudaGetLastError());
+    }
+
+    {
         std::vector<float> scores(T);
-        CUDA_CHECK(cudaMemcpy(scores.data(), d_scores,
-                              sizeof(float) * T, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(scores.data(), d_scores, sizeof(float) * T, cudaMemcpyDeviceToHost));
         printf("scores (T=%d): [", T);
         for (int i = 0; i < T; i++) {
             printf("%f%s", scores[i], i + 1 == T ? "" : ", ");
         }
         printf("]\n");
     }
-
-    // {
-    //     const int block = 128;
-    //     const int grid  = 1;
-    //     softmax_kernel<<<grid, block>>>(d_scores, T);
-    //     CUDA_CHECK(cudaGetLastError());
-    // }
 
     // {
     //     const int block = 128;
@@ -71,7 +72,7 @@ __global__ void compute_scores(const float* K, const float* q, float* scores, in
     // 128 threads/block
     // 1 thread per token.
 
-    int token = blockIdx.x * 128 + threadIdx.x;
+    int token = blockIdx.x * blockDim.x + threadIdx.x;
     if(token >= T) return;
 
     float sum = 0;
@@ -82,6 +83,7 @@ __global__ void compute_scores(const float* K, const float* q, float* scores, in
     return;
  }
 
+ //single block implementation 
  __global__ void softmax_kernel(float* scores, int T) {
     // launch with <<<1, BLOCK_SIZE>>>; each thread strides over T.
     extern __shared__ float shared_reduce[];
