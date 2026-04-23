@@ -1,4 +1,4 @@
-#include "naive_baseline/naive_attention.hpp"
+#include "naive_baseline/attention.hpp"
 #include <vector>
 
 // Use this only for development
