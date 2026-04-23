@@ -34,6 +34,16 @@ void naive_attention(const float* K, const float* V, const float* q, float* out,
     }
 
     {
+        std::vector<float> scores(T);
+        CUDA_CHECK(cudaMemcpy(scores.data(), d_scores, sizeof(float) * T, cudaMemcpyDeviceToHost));
+        printf("scores (T=%d): [", T);
+        for (int i = 0; i < T; i++) {
+            printf("%f%s", scores[i], i + 1 == T ? "" : ", ");
+        }
+        printf("]\n");
+    }
+
+    {
         const int block = 128;
         const int grid  = 1;
         assert((block & (block - 1)) == 0); // tree reduction assumes power-of-2 block
