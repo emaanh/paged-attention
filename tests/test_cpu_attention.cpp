@@ -1,4 +1,4 @@
-#include "cpu_attention.hpp"
+#include "cpu/attention.hpp"
 #include <cmath>
 #include <vector>
 #include <gtest/gtest.h>

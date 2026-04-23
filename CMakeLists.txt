@@ -11,8 +11,8 @@ find_package(CUDAToolkit REQUIRED)
 
 #shared library
 add_library(attention STATIC
-    src/attention/cpu/cpu_attention.cpp
-    src/attention/naive_baseline/naive_attention.cu
+    src/attention/cpu/attention.cpp
+    src/attention/naive_baseline/attention.cu
 )
 target_include_directories(attention PUBLIC src/attention)
 # -pedantic confuses nvcc; restrict warning flags to C++ sources only.

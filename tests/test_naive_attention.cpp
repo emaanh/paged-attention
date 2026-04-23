@@ -1,5 +1,5 @@
-#include "cpu_attention.hpp"
-#include "naive_attention.hpp"
+#include "cpu/attention.hpp"
+#include "naive_baseline/attention.hpp"
 #include "test_helpers.hpp"
 
 #include <gtest/gtest.h>

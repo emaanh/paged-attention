@@ -1,5 +1,5 @@
-#include "naive_attention.cuh"
-#include "naive_attention.hpp"
+#include "attention.cuh"
+#include "attention.hpp"
 
 #include <cassert>
 #include <cstdio> //print
