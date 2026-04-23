@@ -1,10 +1,7 @@
-#include "naive_attention.hpp"
-
+#include "baseline/naive_attention.hpp"
 #include <vector>
 
-// Use this only for development. The wrapper prints the scores vector inside.
-// With q and K all 1.0, every raw score should be d / sqrt(d) = sqrt(d).
-// e.g. d=8 -> ~2.828 for all T entries.
+// Use this only for development
 int main() {
     const int d = 8;
     const int T = 4;
