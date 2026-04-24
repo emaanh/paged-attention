@@ -11,7 +11,7 @@ TEST(CpuAttention, ZeroValuesGivesZeroOutput) {
     std::vector<float> V(T * d, 0.0f);
     std::vector<float> out(d, -1.0f);
 
-    cpu_attention(K.data(), V.data(), q.data(), out.data(), d, T);
+    cpu_attention(q.data(), K.data(), V.data(), out.data(), T, d);
 
     for (int j = 0; j < d; j++) {
         EXPECT_FLOAT_EQ(out[j], 0.0f) << "j=" << j;
@@ -31,7 +31,7 @@ TEST(CpuAttention, UniformKeysGivesColumnMean) {
         }
     }
 
-    cpu_attention(K.data(), V.data(), q.data(), out.data(), d, T);
+    cpu_attention(q.data(), K.data(), V.data(), out.data(), T, d);
 
     const float expected = (T - 1) / 2.0f;   // mean of 0..T-1
     for (int j = 0; j < d; j++) {
@@ -48,7 +48,7 @@ TEST(CpuAttention, TwoTokenWeightedMixMatchesClosedForm) {
                             5, 6, 7, 8};
     std::vector<float> out(d, 0.0f);
 
-    cpu_attention(K.data(), V.data(), q.data(), out.data(), d, T);
+    cpu_attention(q.data(), K.data(), V.data(), out.data(), T, d);
 
     // replicate the math: score_i = (q . K_i) / sqrt(d)
     const float scale = 1.0f / std::sqrt(static_cast<float>(d));

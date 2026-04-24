@@ -22,7 +22,7 @@ void softmax(std::vector<float>& v, float max_val) {
 //     return sum;
 // }
 
-void cpu_attention(const float* K, const float* V, const float* q, float* out, int d, int T) {
+void cpu_attention(const float* q, const float* K, const float* V, float* out, int T, int d) {
 
     //create w matrix
     //do this with dot product libraries? nah we storing in flat array, do loops.

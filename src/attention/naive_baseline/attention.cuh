@@ -1,9 +1,9 @@
 /*
-K: [T*d]
 q: d
+K: [T*d]
 scores: T
 */
-__global__ void compute_scores(const float* K, const float* q, float* scores, int T, int d);
+__global__ void compute_scores(const float* q, const float* K, float* scores, int T, int d);
 
 /*
 scores: T
