@@ -12,7 +12,11 @@ BENCHMARK(BM_CPUReference_E2E)
     ->Args({1024, 64})
     ->Args({4096, 128})
     ->Args({8192, 128})
-    ->Args({8192, 256});
+    ->Args({8192, 256})
+    ->Args({16384, 128})
+    ->Args({16384, 256})
+    ->Args({32768, 128})
+    ->Args({65536, 128});
 
 
 // Naive CUDA baseline
@@ -24,4 +28,8 @@ BENCHMARK(BM_NaiveBaseline_E2E)
     ->Args({1024, 64})
     ->Args({4096, 128})
     ->Args({8192, 128})
-    ->Args({8192, 256});
+    ->Args({8192, 256})
+    ->Args({16384, 128})
+    ->Args({16384, 256})
+    ->Args({32768, 128})
+    ->Args({65536, 128});

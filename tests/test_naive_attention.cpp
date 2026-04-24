@@ -41,11 +41,28 @@ TEST(NaiveAttention, OddShapes) {
     }
 }
 
+// Correctness vs CPU reference at long-context sizes. 
+TEST(NaiveAttention, MegaInput) {
+    for (uint32_t seed : {1u}) {
+        for (int d : {64, 128, 256}) {
+            for (int T : {16384, 32768}) {
+                expect_matches_reference(cpu_attention, naive_attention, d, T, seed);
+            }
+        }
+    }
+}
+
+// Finite-output-only checks at sizes where the CPU reference would dominate test time. 
+// Verifies the kernels don't NaN/Inf under long-context loads.
 TEST(NaiveAttention, SuperLargeInput) {
-    for (uint32_t seed : {1u, 2u}) {
-        expect_finite(naive_attention, 128, 16384, seed);
-        expect_finite(naive_attention, 256, 16384, seed);
-        expect_finite(naive_attention, 128, 32768, seed);
-        expect_finite(naive_attention, 512, 8192,  seed);
+    for (uint32_t seed : {2u}) {
+        expect_finite(naive_attention, 128, 16384,  seed);
+        expect_finite(naive_attention, 256, 16384,  seed);
+        expect_finite(naive_attention, 128, 32768,  seed);
+        expect_finite(naive_attention, 256, 32768,  seed);
+        expect_finite(naive_attention, 128, 65536,  seed);
+        expect_finite(naive_attention, 256, 65536,  seed);
+        expect_finite(naive_attention, 128, 131072, seed);
+        expect_finite(naive_attention, 512, 8192,   seed);
     }
 }
