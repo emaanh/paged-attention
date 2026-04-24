@@ -60,9 +60,9 @@ set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(benchmark)
 
-add_executable(attention_bench bench/bench_attention.cu)
+add_executable(bench bench/bench_attention.cu)
 
-target_link_libraries(attention_bench PRIVATE
+target_link_libraries(bench PRIVATE
     attention
     benchmark::benchmark_main
 )
