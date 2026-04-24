@@ -1,14 +1,9 @@
 #include "attention.cuh"
 #include "attention.hpp"
-
+#include "cuda_check.hpp"
 #include <cassert>
-#include <cstdio> //print
-#include <cuda_runtime.h>
-#include <vector> //print
 
-#define CUDA_CHECK(expr) assert((expr) == cudaSuccess)
-
-void naive_attention(const float* K, const float* V, const float* q, float* out, int d, int T) {
+void naive_attention(const float* q, const float* K, const float* V, float* out, int T, int d) {
     float* d_K = nullptr;
     float* d_V = nullptr;
     float* d_q = nullptr;
@@ -29,7 +24,7 @@ void naive_attention(const float* K, const float* V, const float* q, float* out,
     {
         const int block = 128;
         const int grid  = (T + block - 1) / block; //ceil divison for ints/
-        compute_scores<<<grid, block>>>(d_K, d_q, d_scores, T, d);
+        compute_scores<<<grid, block>>>(d_q, d_K, d_scores, T, d);
         CUDA_CHECK(cudaGetLastError());
     }
 
@@ -58,7 +53,7 @@ void naive_attention(const float* K, const float* V, const float* q, float* out,
     CUDA_CHECK(cudaFree(d_out));
 }
 
-__global__ void compute_scores(const float* K, const float* q, float* scores, int T, int d) {
+__global__ void compute_scores(const float* q, const float* K, float* scores, int T, int d) {
     // 128 threads/block
     // 1 thread per token.
 

@@ -11,7 +11,7 @@ int main() {
     std::vector<float> V(T * d, 0.0f);
     std::vector<float> out(d, 0.0f);
 
-    naive_attention(K.data(), V.data(), q.data(), out.data(), d, T);
+    naive_attention(q.data(), K.data(), V.data(), out.data(), T, d);
 
     return 0;
 }

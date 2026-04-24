@@ -23,8 +23,8 @@ TEST(NaiveAttention, Coverage) {
 
 TEST(NaiveAttention, LargeInput) {
     for (uint32_t seed : {1u, 2u}) {
-        for (int d : {64, 128, 256}) {
-            for (int T : {256, 1024, 4096, 8192}) {
+        for (int d : {64, 128}) {
+            for (int T : {256, 1024, 4096, 8192, 32768, 1048576}) {
                 expect_matches_reference(cpu_attention, naive_attention, d, T, seed);
             }
         }
@@ -41,11 +41,7 @@ TEST(NaiveAttention, OddShapes) {
     }
 }
 
-TEST(NaiveAttention, SuperLargeInput) {
-    for (uint32_t seed : {1u, 2u}) {
-        expect_finite(naive_attention, 128, 16384, seed);
-        expect_finite(naive_attention, 256, 16384, seed);
-        expect_finite(naive_attention, 128, 32768, seed);
-        expect_finite(naive_attention, 512, 8192,  seed);
-    }
+TEST(NaiveAttention, BenchMaxInput) {
+    const uint32_t seed = 1;
+    expect_finite(naive_attention, 128, 2097152, seed);   // 2M tokens, d=128  — 2 GB K+V
 }
