@@ -23,7 +23,7 @@ TEST(NaiveAttention, Coverage) {
 
 TEST(NaiveAttention, LargeInput) {
     for (uint32_t seed : {1u, 2u}) {
-        for (int d : {64, 128}) {
+        for (int d : {64, 128, 256}) {
             for (int T : {256, 1024, 4096, 8192, 32768, 1048576}) {
                 expect_matches_reference(cpu_attention, naive_attention, d, T, seed);
             }
