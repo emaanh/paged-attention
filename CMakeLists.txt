@@ -19,6 +19,7 @@ include(FetchContent)
 add_library(attention STATIC
     src/attention/cpu/attention.cpp
     src/attention/naive_baseline/attention.cu
+    src/attention/flash/flash_attention.cu
 )
 target_include_directories(attention PUBLIC src/attention include)
 
@@ -43,6 +44,7 @@ enable_testing()
     add_executable(unit_tests
     tests/test_cpu_attention.cpp
     tests/test_naive_attention.cpp
+    tests/test_flash_attention.cpp
     )
     target_link_libraries(unit_tests PRIVATE attention GTest::gtest_main)
 
