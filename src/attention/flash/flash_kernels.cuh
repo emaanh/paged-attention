@@ -60,21 +60,24 @@ __global__ void flash_decode_kernel(const float* q, KV kv, float* out, int T, in
         }
         const float tile_sum = reduce_smem[0];
 
-        // Online softmax: rescale accumulated output and running sum by exp(old_max - new_max)
-        const float new_max = fmaxf(running_max, tile_max);
-        const float rescale = expf(running_max - new_max);
+        // Online softmax update.
+        // tile_scores[t] = exp(score - tile_max), so to express them relative to new_max
+        // we need an extra exp(tile_max - new_max) factor on all new contributions.
+        const float new_max      = fmaxf(running_max, tile_max);
+        const float old_rescale  = expf(running_max - new_max);
+        const float tile_rescale = expf(tile_max - new_max);
         running_max = new_max;
-        running_sum = rescale * running_sum + tile_sum;
+        running_sum = old_rescale * running_sum + tile_rescale * tile_sum;
 
         if (tid < d) {
-            partial_out0 *= rescale;
+            partial_out0 *= old_rescale;
             for (int t = 0; t < tile_len; t++)
-                partial_out0 += tile_scores[t] * kv.val(tile_start + t, tid, d);
+                partial_out0 += tile_rescale * tile_scores[t] * kv.val(tile_start + t, tid, d);
         }
         if (tid + FLASH_TILE < d) {
-            partial_out1 *= rescale;
+            partial_out1 *= old_rescale;
             for (int t = 0; t < tile_len; t++)
-                partial_out1 += tile_scores[t] * kv.val(tile_start + t, tid + FLASH_TILE, d);
+                partial_out1 += tile_rescale * tile_scores[t] * kv.val(tile_start + t, tid + FLASH_TILE, d);
         }
         __syncthreads();
     }
