@@ -152,11 +152,19 @@ static void bm_flash_blocks(benchmark::State& state) {
     CUDA_CHECK(cudaFree(d_partial_sum));
 }
 
+static void BM_FlashBlocks_16 (benchmark::State& state) { bm_flash_blocks<16> (state); }
+static void BM_FlashBlocks_32 (benchmark::State& state) { bm_flash_blocks<32> (state); }
+static void BM_FlashBlocks_64 (benchmark::State& state) { bm_flash_blocks<64> (state); }
 static void BM_FlashBlocks_128(benchmark::State& state) { bm_flash_blocks<128>(state); }
 static void BM_FlashBlocks_256(benchmark::State& state) { bm_flash_blocks<256>(state); }
 static void BM_FlashBlocks_512(benchmark::State& state) { bm_flash_blocks<512>(state); }
+static void BM_FlashBlocks_1024(benchmark::State& state) { bm_flash_blocks<1024>(state); }
 
 #define BLOCK_SWEEP_ARGS RangeMultiplier(2)->Range(4096, 2097152)
+BENCHMARK(BM_FlashBlocks_16) ->BLOCK_SWEEP_ARGS;
+BENCHMARK(BM_FlashBlocks_32) ->BLOCK_SWEEP_ARGS;
+BENCHMARK(BM_FlashBlocks_64) ->BLOCK_SWEEP_ARGS;
 BENCHMARK(BM_FlashBlocks_128)->BLOCK_SWEEP_ARGS;
 BENCHMARK(BM_FlashBlocks_256)->BLOCK_SWEEP_ARGS;
 BENCHMARK(BM_FlashBlocks_512)->BLOCK_SWEEP_ARGS;
+BENCHMARK(BM_FlashBlocks_1024)->BLOCK_SWEEP_ARGS;
