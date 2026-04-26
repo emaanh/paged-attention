@@ -6,14 +6,14 @@
 void flash_attention(const float* q, const float* K, const float* V, float* out, int T, int d) {
     float *d_q, *d_K, *d_V, *d_out;
 
-    CUDA_CHECK(cudaMalloc(&d_K,   sizeof(float) * T * d));
-    CUDA_CHECK(cudaMalloc(&d_V,   sizeof(float) * T * d));
-    CUDA_CHECK(cudaMalloc(&d_q,   sizeof(float) * d));
+    CUDA_CHECK(cudaMalloc(&d_K, sizeof(float) * T * d));
+    CUDA_CHECK(cudaMalloc(&d_V, sizeof(float) * T * d));
+    CUDA_CHECK(cudaMalloc(&d_q, sizeof(float) * d));
     CUDA_CHECK(cudaMalloc(&d_out, sizeof(float) * d));
 
     CUDA_CHECK(cudaMemcpy(d_K, K, sizeof(float) * T * d, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_V, V, sizeof(float) * T * d, cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_q, q, sizeof(float) * d,     cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_q, q, sizeof(float) * d, cudaMemcpyHostToDevice));
 
     run_flash_kernels(d_q, ContiguousKV{d_K, d_V}, d_out, T, d);
 

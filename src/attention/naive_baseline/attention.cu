@@ -27,25 +27,23 @@ void naive_attention(const float* q, const float* K, const float* V, float* out,
     CUDA_CHECK(cudaFree(d_out));
 }
 
-void NaiveAttention::run(const float* q, const float* K, const float* V,
-                          float* out, int T, int d) {
+void NaiveAttention::run(const float* q, const float* K, const float* V, float* out, int T, int d) {
     naive_attention(q, K, V, out, T, d);
 }
 
-Sequence allocate_sequence(const float* h_q, const float* h_K, const float* h_V,
-                            float* h_out, int T, int d) {
+Sequence allocate_sequence(const float* h_q, const float* h_K, const float* h_V, float* h_out, int T, int d) {
     Sequence s;
     s.T = T; s.d = d; s.h_out = h_out;
 
-    CUDA_CHECK(cudaMalloc(&s.d_K,      sizeof(float) * T * d));
-    CUDA_CHECK(cudaMalloc(&s.d_V,      sizeof(float) * T * d));
-    CUDA_CHECK(cudaMalloc(&s.d_q,      sizeof(float) * d));
+    CUDA_CHECK(cudaMalloc(&s.d_K, sizeof(float) * T * d));
+    CUDA_CHECK(cudaMalloc(&s.d_V, sizeof(float) * T * d));
+    CUDA_CHECK(cudaMalloc(&s.d_q, sizeof(float) * d));
     CUDA_CHECK(cudaMalloc(&s.d_scores, sizeof(float) * T));
-    CUDA_CHECK(cudaMalloc(&s.d_out,    sizeof(float) * d));
+    CUDA_CHECK(cudaMalloc(&s.d_out, sizeof(float) * d));
 
     CUDA_CHECK(cudaMemcpy(s.d_K, h_K, sizeof(float) * T * d, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(s.d_V, h_V, sizeof(float) * T * d, cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(s.d_q, h_q, sizeof(float) * d,     cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(s.d_q, h_q, sizeof(float) * d, cudaMemcpyHostToDevice));
 
     return s;
 }

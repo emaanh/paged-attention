@@ -4,8 +4,7 @@
 #include "attention_utils.hpp"
 #include <benchmark/benchmark.h>
 
-inline void benchmark_attention_e2e(benchmark::State& state, AttentionBackend& backend,
-                                     uint32_t seed = 1) {
+inline void benchmark_attention_e2e(benchmark::State& state, AttentionBackend& backend, uint32_t seed = 1) {
     const int T = static_cast<int>(state.range(0));
     const int d = static_cast<int>(state.range(1));
 

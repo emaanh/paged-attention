@@ -18,7 +18,7 @@ __global__ void compute_scores_kernel(const float* q, KV kv, float* scores, int 
 
 __global__ void softmax_kernel(float* scores, int T) {
     extern __shared__ float shared_reduce[];
-    const int tid         = threadIdx.x;
+    const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
     float thread_max = -INFINITY;

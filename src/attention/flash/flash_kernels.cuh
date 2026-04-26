@@ -9,15 +9,16 @@ static constexpr int FLASH_TILE = 128;
 template<typename KV>
 __global__ void flash_decode_kernel(const float* q, KV kv, float* out, int T, int d) {
     extern __shared__ float smem[];
-    float* q_smem      = smem;
+    float* q_smem = smem;
     float* tile_scores = smem + d;
     float* reduce_smem = smem + d + FLASH_TILE;
 
-    const int   tid   = threadIdx.x;
+    const int tid = threadIdx.x;
     const float scale = 1.0f / sqrtf((float)d);
 
-    for (int i = tid; i < d; i += blockDim.x)
+    for (int i = tid; i < d; i += blockDim.x) {
         q_smem[i] = q[i];
+    }    
     __syncthreads();
 
     float running_max  = -INFINITY;
@@ -26,7 +27,7 @@ __global__ void flash_decode_kernel(const float* q, KV kv, float* out, int T, in
     float partial_out1 = 0.0f;
 
     for (int tile_start = 0; tile_start < T; tile_start += FLASH_TILE) {
-        const int token    = tile_start + tid;
+        const int token = tile_start + tid;
         const int tile_len = min(FLASH_TILE, T - tile_start);
 
         // Score for this thread's token
@@ -63,7 +64,7 @@ __global__ void flash_decode_kernel(const float* q, KV kv, float* out, int T, in
         // Online softmax update.
         // tile_scores[t] = exp(score - tile_max), so to express them relative to new_max
         // we need an extra exp(tile_max - new_max) factor on all new contributions.
-        const float new_max      = fmaxf(running_max, tile_max);
+        const float new_max = fmaxf(running_max, tile_max);
         const float old_rescale  = expf(running_max - new_max);
         const float tile_rescale = expf(tile_max - new_max);
         running_max = new_max;
@@ -71,19 +72,21 @@ __global__ void flash_decode_kernel(const float* q, KV kv, float* out, int T, in
 
         if (tid < d) {
             partial_out0 *= old_rescale;
-            for (int t = 0; t < tile_len; t++)
+            for (int t = 0; t < tile_len; t++) {
                 partial_out0 += tile_rescale * tile_scores[t] * kv.val(tile_start + t, tid, d);
+            }
         }
         if (tid + FLASH_TILE < d) {
             partial_out1 *= old_rescale;
-            for (int t = 0; t < tile_len; t++)
+            for (int t = 0; t < tile_len; t++) {
                 partial_out1 += tile_rescale * tile_scores[t] * kv.val(tile_start + t, tid + FLASH_TILE, d);
+            }
         }
         __syncthreads();
     }
 
     const float inv_sum = 1.0f / running_sum;
-    if (tid < d)              out[tid]              = partial_out0 * inv_sum;
+    if (tid < d) out[tid] = partial_out0 * inv_sum;
     if (tid + FLASH_TILE < d) out[tid + FLASH_TILE] = partial_out1 * inv_sum;
 }
 

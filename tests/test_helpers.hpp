@@ -7,8 +7,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-inline void expect_matches_reference(AttentionBackend& reference, AttentionBackend& candidate,
-                                      int d, int T, uint32_t seed, float epsilon = 1e-4f) {
+inline void expect_matches_reference(AttentionBackend& reference, AttentionBackend& candidate, int d, int T, uint32_t seed, float epsilon = 1e-4f) {
     AttnInputs inputs = make_attention_inputs(d, T, seed);
     std::vector<float> reference_out(d), candidate_out(d);
 
