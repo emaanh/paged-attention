@@ -105,3 +105,58 @@ BENCHMARK(BM_NaiveBaseline_E2E)     ->RangeMultiplier(2)->Ranges({{4096, 2097152
 BENCHMARK(BM_FlashAttention_E2E)    ->RangeMultiplier(2)->Ranges({{4096, 2097152}, {128, 128}});
 BENCHMARK(BM_NaiveBaseline_Kernel)  ->RangeMultiplier(2)->Ranges({{4096, 2097152}, {128, 128}});
 BENCHMARK(BM_FlashAttention_Kernel) ->RangeMultiplier(2)->Ranges({{4096, 2097152}, {128, 128}});
+
+// ----------------------------------------------------------------------------
+// Block-count sweep — find the optimal FLASH_BLOCKS for this GPU.
+// Run with: ./bench --benchmark_filter=BM_FlashBlocks
+// ----------------------------------------------------------------------------
+
+template<int MAX_BLOCKS>
+static void bm_flash_blocks(benchmark::State& state) {
+    const int T = static_cast<int>(state.range(0));
+    const int d = 128;
+
+    AttnInputs inputs = make_attention_inputs(d, T, 1);
+    ContiguousKVStore kv(inputs.K.data(), inputs.V.data(), T, d);
+
+    float *d_q, *d_out;
+    CUDA_CHECK(cudaMalloc(&d_q,  sizeof(float) * d));
+    CUDA_CHECK(cudaMalloc(&d_out, sizeof(float) * d));
+    CUDA_CHECK(cudaMemcpy(d_q, inputs.q.data(), sizeof(float) * d, cudaMemcpyHostToDevice));
+
+    const int num_blocks = flash_num_blocks(T, MAX_BLOCKS);
+    float *d_partial_out, *d_partial_max, *d_partial_sum;
+    CUDA_CHECK(cudaMalloc(&d_partial_out, sizeof(float) * num_blocks * d));
+    CUDA_CHECK(cudaMalloc(&d_partial_max, sizeof(float) * num_blocks));
+    CUDA_CHECK(cudaMalloc(&d_partial_sum, sizeof(float) * num_blocks));
+
+    run_flash_kernels(d_q, kv.accessor(), d_out, T, d,
+                      d_partial_out, d_partial_max, d_partial_sum, num_blocks);
+    CUDA_CHECK(cudaDeviceSynchronize());
+
+    for (auto _ : state) {
+        run_flash_kernels(d_q, kv.accessor(), d_out, T, d,
+                          d_partial_out, d_partial_max, d_partial_sum, num_blocks);
+        CUDA_CHECK(cudaDeviceSynchronize());
+        benchmark::DoNotOptimize(d_out);
+    }
+
+    state.SetItemsProcessed(state.iterations() * T);
+    state.SetBytesProcessed(state.iterations() * static_cast<int64_t>((2 * T * d + d + d) * sizeof(float)));
+    state.SetLabel(std::to_string(num_blocks) + " blocks");
+
+    CUDA_CHECK(cudaFree(d_q));
+    CUDA_CHECK(cudaFree(d_out));
+    CUDA_CHECK(cudaFree(d_partial_out));
+    CUDA_CHECK(cudaFree(d_partial_max));
+    CUDA_CHECK(cudaFree(d_partial_sum));
+}
+
+static void BM_FlashBlocks_128(benchmark::State& state) { bm_flash_blocks<128>(state); }
+static void BM_FlashBlocks_256(benchmark::State& state) { bm_flash_blocks<256>(state); }
+static void BM_FlashBlocks_512(benchmark::State& state) { bm_flash_blocks<512>(state); }
+
+#define BLOCK_SWEEP_ARGS RangeMultiplier(2)->Range(4096, 2097152)
+BENCHMARK(BM_FlashBlocks_128)->BLOCK_SWEEP_ARGS;
+BENCHMARK(BM_FlashBlocks_256)->BLOCK_SWEEP_ARGS;
+BENCHMARK(BM_FlashBlocks_512)->BLOCK_SWEEP_ARGS;

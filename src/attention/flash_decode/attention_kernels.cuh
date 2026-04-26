@@ -7,8 +7,8 @@
 static constexpr int FLASH_TILE   = 128;
 static constexpr int FLASH_BLOCKS = 128;
 
-inline int flash_num_blocks(int T) {
-    return min(FLASH_BLOCKS, (T + FLASH_TILE - 1) / FLASH_TILE);
+inline int flash_num_blocks(int T, int max_blocks = FLASH_BLOCKS) {
+    return min(max_blocks, (T + FLASH_TILE - 1) / FLASH_TILE);
 }
 
 // Each block owns [chunk_start, chunk_end) tokens and runs online softmax within that chunk.
