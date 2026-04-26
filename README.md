@@ -10,7 +10,7 @@ ssh <username>@discovery.usc.edu
 ### 2. request gpu node
 small request:
 ```bash
-srun --account=snazaria_1817 --partition=gpu --gpus=1 --cpus-per-task=2 --mem=8G --pty bash
+srun --account=snazaria_1817 --partition=gpu --gpus=a40:1 --cpus-per-task=2 --mem=8G --pty bash
 ```
 large request:
 ``` bash

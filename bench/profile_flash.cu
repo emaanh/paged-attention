@@ -3,6 +3,7 @@
 #include "flash_decode/attention_kernels.cuh"
 #include "kv_layout.hpp"
 #include "kv_store.hpp"
+#include <cuda_profiler_api.h>
 #include <cstdio>
 #include <cstdlib>
 
@@ -39,11 +40,13 @@ int main(int argc, char** argv) {
                           d_partial_out, d_partial_max, d_partial_sum, num_blocks);
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    // profiling window
+    // profiling window — nsys only captures between Start/Stop
+    cudaProfilerStart();
     for (int i = 0; i < iters; i++)
         run_flash_kernels(d_q, kv.accessor(), d_out, T, d,
                           d_partial_out, d_partial_max, d_partial_sum, num_blocks);
     CUDA_CHECK(cudaDeviceSynchronize());
+    cudaProfilerStop();
 
     CUDA_CHECK(cudaFree(d_q));
     CUDA_CHECK(cudaFree(d_out));
