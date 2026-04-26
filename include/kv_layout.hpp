@@ -16,7 +16,7 @@ struct ContiguousKV {
 struct PagedKV {
     const float* K_pool;
     const float* V_pool;
-    const int*   block_table;
+    const int* block_table;
     int page_size;
 
     __forceinline__ __device__ float key(int token, int dim, int d) const {

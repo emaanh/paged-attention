@@ -1,7 +1,7 @@
 #include "bench_helpers.cuh"
 #include "cpu/attention.hpp"
-#include "flash/flash_attention.hpp"
-#include "flash/flash_kernels.cuh"
+#include "flash_decode/attention.hpp"
+#include "flash_decode/attention_kernels.cuh"
 #include "kv_store.hpp"
 #include "naive_baseline/attention.hpp"
 #include "naive_baseline/attention_kernels.cuh"
@@ -73,11 +73,19 @@ static void BM_FlashAttention_Kernel(benchmark::State& state) {
     CUDA_CHECK(cudaMalloc(&d_out, sizeof(float) * d));
     CUDA_CHECK(cudaMemcpy(d_q, inputs.q.data(), sizeof(float) * d, cudaMemcpyHostToDevice));
 
-    run_flash_kernels(d_q, kv.accessor(), d_out, T, d);
+    const int num_blocks = flash_num_blocks(T);
+    float *d_partial_out, *d_partial_max, *d_partial_sum;
+    CUDA_CHECK(cudaMalloc(&d_partial_out, sizeof(float) * num_blocks * d));
+    CUDA_CHECK(cudaMalloc(&d_partial_max, sizeof(float) * num_blocks));
+    CUDA_CHECK(cudaMalloc(&d_partial_sum, sizeof(float) * num_blocks));
+
+    run_flash_kernels(d_q, kv.accessor(), d_out, T, d,
+                      d_partial_out, d_partial_max, d_partial_sum, num_blocks);
     CUDA_CHECK(cudaDeviceSynchronize());
 
     for (auto _ : state) {
-        run_flash_kernels(d_q, kv.accessor(), d_out, T, d);
+        run_flash_kernels(d_q, kv.accessor(), d_out, T, d,
+                          d_partial_out, d_partial_max, d_partial_sum, num_blocks);
         CUDA_CHECK(cudaDeviceSynchronize());
         benchmark::DoNotOptimize(d_out);
     }
@@ -87,6 +95,9 @@ static void BM_FlashAttention_Kernel(benchmark::State& state) {
 
     CUDA_CHECK(cudaFree(d_q));
     CUDA_CHECK(cudaFree(d_out));
+    CUDA_CHECK(cudaFree(d_partial_out));
+    CUDA_CHECK(cudaFree(d_partial_max));
+    CUDA_CHECK(cudaFree(d_partial_sum));
 }
 
 BENCHMARK(BM_CPUReference_E2E)      ->RangeMultiplier(2)->Ranges({{4096, 2097152}, {128, 128}});

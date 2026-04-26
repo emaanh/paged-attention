@@ -1,10 +1,10 @@
 #include "cpu/attention.hpp"
-#include "flash/flash_attention.hpp"
+#include "flash_decode/attention.hpp"
 #include "test_helpers.hpp"
 
 #include <gtest/gtest.h>
 
-static CpuAttention   cpu;
+static CpuAttention cpu;
 static FlashAttention flash;
 
 TEST(FlashAttention, Random) {

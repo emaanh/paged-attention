@@ -19,7 +19,7 @@ include(FetchContent)
 add_library(attention STATIC
     src/attention/cpu/attention.cpp
     src/attention/naive_baseline/attention.cu
-    src/attention/flash/flash_attention.cu
+    src/attention/flash_decode/attention.cu
 )
 target_include_directories(attention PUBLIC src/attention include)
 
