@@ -68,3 +68,6 @@ target_link_libraries(bench PRIVATE
     attention
     benchmark::benchmark_main
 )
+
+add_executable(profile_flash bench/profile_flash.cu)
+target_link_libraries(profile_flash PRIVATE attention)
