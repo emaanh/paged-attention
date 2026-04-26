@@ -25,7 +25,6 @@ void flash_attention(const float* q, const float* K, const float* V, float* out,
     CUDA_CHECK(cudaFree(d_out));
 }
 
-void FlashAttention::run(const float* q, const float* K, const float* V,
-                          float* out, int T, int d) {
+void FlashAttention::run(const float* q, const float* K, const float* V, float* out, int T, int d) {
     flash_attention(q, K, V, out, T, d);
 }

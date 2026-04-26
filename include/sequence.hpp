@@ -7,6 +7,6 @@ struct Sequence {
     float* d_scores;
     float* d_out;
     float* h_out;
-    int    T;
-    int    d;
+    int T;
+    int d;
 };
