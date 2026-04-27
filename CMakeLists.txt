@@ -20,6 +20,7 @@ add_library(attention STATIC
     src/attention/cpu/attention.cpp
     src/attention/naive_baseline/attention.cu
     src/attention/flash_decode/attention.cu
+    src/attention/contiguous_pool/pool.cu
 )
 target_include_directories(attention PUBLIC src/attention include)
 
@@ -45,6 +46,7 @@ enable_testing()
     tests/test_cpu_attention.cpp
     tests/test_naive_attention.cpp
     tests/test_flash_attention.cpp
+    tests/test_contiguous_pool.cpp
     )
     target_link_libraries(unit_tests PRIVATE attention GTest::gtest_main)
 
@@ -71,3 +73,6 @@ target_link_libraries(bench PRIVATE
 
 add_executable(profile_flash bench/profile_flash.cu)
 target_link_libraries(profile_flash PRIVATE attention)
+
+add_executable(bench_pool bench/bench_pool.cu)
+target_link_libraries(bench_pool PRIVATE attention benchmark::benchmark_main)
