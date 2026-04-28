@@ -106,11 +106,13 @@ at 75% fragmentation, paged attention holds **4× more concurrent sequences** in
 
 ### page size tradeoff (64 sequences, actual\_len=512)
 
-larger pages reduce random memory jumps and improve coalescing, but increase per-sequence waste.
-
 | page\_size | throughput | max waste/seq |
 |---|---|---|
 | 16 | ~12 GB/s | 15 tokens |
+| 32 | ~12 GB/s | 31 tokens |
+| 64 | ~12 GB/s | 63 tokens |
+| 128 | ~12 GB/s | 127 tokens |
+| 256 | ~12 GB/s | 255 tokens |
 | 512 (contiguous) | ~21.5 GB/s | 511 tokens |
 
-run `BM_PagedPool_PageSizeSweep` to get the full curve for 32, 64, 128, 256 on your GPU.
+throughput is flat across all paged configurations regardless of page size. the 1.8× gap vs. contiguous is not from page boundary crossings — it comes from the scatter-gather access pattern of PagedKV itself and the per-decode `sync_block_table` host-to-device copy. page size only affects waste, not performance. pick the smallest page that keeps waste acceptable for your workload.
