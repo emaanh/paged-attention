@@ -5,10 +5,6 @@
 #include <cassert>
 #include <cstring>
 
-// ---------------------------------------------------------------------------
-// ContiguousPool
-// ---------------------------------------------------------------------------
-
 ContiguousPool::ContiguousPool(int max_sequences, int max_seq_len, int d)
     : occupied_(max_sequences, false)
     , actual_lens_(max_sequences, 0)
@@ -17,7 +13,7 @@ ContiguousPool::ContiguousPool(int max_sequences, int max_seq_len, int d)
     , d_(d)
 {
     assert(max_sequences > 0 && max_seq_len > 0 && d > 0);
-    assert(d <= 2 * FLASH_TILE);  // flash kernel constraint
+    assert(d <= 2 * FLASH_TILE);
 
     const size_t kv_bytes = sizeof(float) * (size_t)max_sequences * max_seq_len * d;
     CUDA_CHECK(cudaMalloc(&d_K_, kv_bytes));
@@ -56,7 +52,7 @@ int ContiguousPool::admit(const float* h_K, const float* h_V, int actual_len) {
         CUDA_CHECK(cudaMemcpy(slot_V, h_V, token_bytes, cudaMemcpyHostToDevice));
         return i;
     }
-    return -1;  // pool full
+    return -1;
 }
 
 void ContiguousPool::release(int slot) {
@@ -111,10 +107,6 @@ void ContiguousPool::decode_device(int slot, int actual_len,
 size_t ContiguousPool::total_kv_bytes() const {
     return 2ULL * sizeof(float) * max_sequences_ * max_seq_len_ * d_;
 }
-
-// ---------------------------------------------------------------------------
-// ContiguousPoolAttention — AttentionBackend adapter
-// ---------------------------------------------------------------------------
 
 void ContiguousPoolAttention::run(const float* q, const float* K, const float* V,
                                    float* out, int T, int d) {
