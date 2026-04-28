@@ -8,7 +8,8 @@ static constexpr int PAGE_SIZE = 16;
 
 class PagedPool : public KVPool {
 public:
-    PagedPool(int total_pages, int max_sequences, int max_pages_per_seq, int d);
+    PagedPool(int total_pages, int max_sequences, int max_pages_per_seq, int d,
+              int page_size = PAGE_SIZE);
     ~PagedPool();
     PagedPool(const PagedPool&)            = delete;
     PagedPool& operator=(const PagedPool&) = delete;
@@ -52,6 +53,7 @@ private:
     int max_sequences_;
     int max_pages_per_seq_;
     int d_;
+    int page_size_;
 
     void write_token_to_page(int page, int slot_in_page,
                               const float* h_k, const float* h_v);

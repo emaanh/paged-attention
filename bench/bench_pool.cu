@@ -207,3 +207,72 @@ BENCHMARK(BM_PagedPool_Kernel)
     ->Args({128, 512})
     ->Args({16,  8192})
     ->Args({64,  8192});
+
+static void BM_PagedPool_PageSizeSweep(benchmark::State& state) {
+    const int N          = 64;
+    const int actual_len = static_cast<int>(state.range(0));
+    const int page_size  = static_cast<int>(state.range(1));
+    const int d          = 128;
+
+    const int pages_per_seq = (actual_len + page_size - 1) / page_size;
+    const int total_pages   = pages_per_seq * N;
+    const int max_pages_seq = pages_per_seq;
+
+    PagedPool pool(total_pages, N, max_pages_seq, d, page_size);
+    std::vector<int> slots(N);
+    for (int i = 0; i < N; i++) {
+        AttnInputs inp = make_attention_inputs(d, actual_len, (uint32_t)(i + 1));
+        slots[i] = pool.admit(inp.K.data(), inp.V.data(), actual_len);
+    }
+
+    float *d_q, *d_out, *d_partial_out, *d_partial_max, *d_partial_sum;
+    CUDA_CHECK(cudaMalloc(&d_q,           sizeof(float) * d));
+    CUDA_CHECK(cudaMalloc(&d_out,         sizeof(float) * d));
+    CUDA_CHECK(cudaMalloc(&d_partial_out, sizeof(float) * FLASH_BLOCKS * d));
+    CUDA_CHECK(cudaMalloc(&d_partial_max, sizeof(float) * FLASH_BLOCKS));
+    CUDA_CHECK(cudaMalloc(&d_partial_sum, sizeof(float) * FLASH_BLOCKS));
+
+    std::vector<float> h_q(d, 1.0f);
+    CUDA_CHECK(cudaMemcpy(d_q, h_q.data(), sizeof(float) * d, cudaMemcpyHostToDevice));
+
+    for (int i = 0; i < N; i++)
+        pool.decode_device(slots[i], actual_len, d_q, d_out,
+                           d_partial_out, d_partial_max, d_partial_sum);
+    CUDA_CHECK(cudaDeviceSynchronize());
+
+    for (auto _ : state) {
+        for (int i = 0; i < N; i++)
+            pool.decode_device(slots[i], actual_len, d_q, d_out,
+                               d_partial_out, d_partial_max, d_partial_sum);
+        CUDA_CHECK(cudaDeviceSynchronize());
+        benchmark::DoNotOptimize(d_out);
+    }
+
+    state.SetItemsProcessed(state.iterations() * (int64_t)N * actual_len);
+    state.SetBytesProcessed(
+        state.iterations() * (int64_t)N * (2 * actual_len * d + d + d) * sizeof(float));
+
+    const int waste = paged_waste_tokens(actual_len, page_size);
+    state.SetLabel("page=" + std::to_string(page_size)
+                   + " waste=" + std::to_string(waste) + "tok");
+
+    CUDA_CHECK(cudaFree(d_q));
+    CUDA_CHECK(cudaFree(d_out));
+    CUDA_CHECK(cudaFree(d_partial_out));
+    CUDA_CHECK(cudaFree(d_partial_max));
+    CUDA_CHECK(cudaFree(d_partial_sum));
+}
+
+BENCHMARK(BM_PagedPool_PageSizeSweep)
+    ->Args({512,  16})
+    ->Args({512,  32})
+    ->Args({512,  64})
+    ->Args({512, 128})
+    ->Args({512, 256})
+    ->Args({512, 512})
+    ->Args({2048,  16})
+    ->Args({2048,  32})
+    ->Args({2048,  64})
+    ->Args({2048, 128})
+    ->Args({2048, 256})
+    ->Args({2048, 512});
