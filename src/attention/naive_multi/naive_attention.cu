@@ -3,21 +3,6 @@
 #include <math.h>
 #include <stdio.h>
 
-// ---------------------------------------------------------------------------
-// Kernel: one thread block handles one attention head.
-//
-// Grid : (num_heads)
-// Block: (min(head_dim, 1024)) threads
-//
-// Dynamic shared memory layout:
-//   [0            .. seq_len)      float  scores[seq_len]
-//   [seq_len      .. seq_len+BDIM) float  partials[blockDim.x]
-//
-// The kernel performs:
-//   1. For each KV position i: scores[i] = dot(Q[h], K[i][h]) / sqrt(head_dim)
-//   2. Softmax over scores (numerically stable)
-//   3. O[h] = sum_i( scores[i] * V[i][h] )
-// ---------------------------------------------------------------------------
 __global__ void naive_attention_kernel(
     const float* __restrict__ Q,
     const float* __restrict__ K,
@@ -37,9 +22,7 @@ __global__ void naive_attention_kernel(
 
     const float scale = 1.0f / sqrtf(static_cast<float>(head_dim));
 
-    // -----------------------------------------------------------------------
-    // Step 1: compute attention scores scores[i] = Q[h] · K[i][h] * scale
-    // -----------------------------------------------------------------------
+
     for (int i = 0; i < seq_len; ++i) {
         // Q row for head h: Q[h * head_dim .. h * head_dim + head_dim)
         // K row for position i, head h: K[i * num_heads * head_dim + h * head_dim ..]

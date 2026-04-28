@@ -1,35 +1,81 @@
-cmake_minimum_required(VERSION 3.29) #version of CARC cmake module.
+cmake_minimum_required(VERSION 3.29)
 project(paged_attention LANGUAGES CXX CUDA)
-find_package(CUDAToolkit REQUIRED)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_STANDARD 17)
+#default is release!
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-
 set(CMAKE_CUDA_ARCHITECTURES native)
 
-# Embed CUDA lib path into the binary so it finds libcudart at runtime
-# without needing LD_LIBRARY_PATH.
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+find_package(CUDAToolkit REQUIRED)
+include(FetchContent)
 
-add_executable(test
-    src/main.cpp
-    src/test/kernel.cu
-    src/allocator/block_allocator.cpp
-    src/attention/naive_attention.cu
+#shared library
+add_library(attention STATIC
+    src/attention/cpu/attention.cpp
+    src/attention/naive_baseline/attention.cu
+    src/attention/flash_decode/attention.cu
+    src/attention/contiguous_pool/pool.cu
+    src/attention/paged_pool/pool.cu
+)
+target_include_directories(attention PUBLIC src/attention include)
+
+# -pedantic confuses nvcc; restrict warning flags to C++ sources only.
+target_compile_options(attention PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -pedantic>)
+target_link_libraries(attention PRIVATE CUDA::cudart)
+
+#testing driver: adds a main to the shared library to make it runnable
+add_executable(dev src/main.cpp)
+target_link_libraries(dev PRIVATE attention)
+
+#gtest
+enable_testing()
+    FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG v1.15.2
+    )
+    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE) # stop gtest from installing itself / polluting your install target
+    FetchContent_MakeAvailable(googletest) 
+    target_compile_options(gtest PRIVATE -Wno-character-conversion) #supress the char warning. note to self: fix in OSS contribution
+    add_executable(unit_tests
+    tests/test_cpu_attention.cpp
+    tests/test_naive_attention.cpp
+    tests/test_flash_attention.cpp
+    tests/test_contiguous_pool.cpp
+    tests/test_paged_pool.cpp
+    )
+    target_link_libraries(unit_tests PRIVATE attention GTest::gtest_main)
+
+    include(GoogleTest)
+    gtest_discover_tests(unit_tests)
+
+#benchmark
+FetchContent_Declare(
+    benchmark
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG v1.9.1
 )
 
-target_link_libraries(test PRIVATE CUDA::cudart_static)
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(benchmark)
 
-target_compile_options(test PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler=-Wall>)
+add_executable(bench bench/bench_attention.cu)
 
-add_executable(bench
-    benchmarks/bench.cu
-    src/attention/naive_attention.cu
+target_link_libraries(bench PRIVATE
+    attention
+    benchmark::benchmark_main
 )
 
-target_link_libraries(bench PRIVATE CUDA::cudart_static)
+add_executable(profile_flash bench/profile_flash.cu)
+target_link_libraries(profile_flash PRIVATE attention)
 
-target_compile_options(bench PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler=-Wall>)
+add_executable(bench_pool bench/bench_pool.cu)
+target_link_libraries(bench_pool PRIVATE attention benchmark::benchmark_main)
