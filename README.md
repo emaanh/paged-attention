@@ -2,6 +2,8 @@
 
 A from-scratch CUDA implementation of **flash decoding** and **PagedAttention** ([Kwon et al., SOSP 2023](https://arxiv.org/abs/2309.06180)), built to answer one question: *what does paged memory management actually cost at the kernel level?*
 
+[![Read the paper](https://img.shields.io/badge/Read%20the%20paper-PDF-b31b1b?style=for-the-badge)](https://emaanheidari.com/decode_attention.pdf)
+
 ![CUDA](https://img.shields.io/badge/CUDA-12-76B900?logo=nvidia&logoColor=white)
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C?logo=cplusplus&logoColor=white)
 ![Tested on](https://img.shields.io/badge/tested%20on-NVIDIA%20A40-76B900)
@@ -31,31 +33,41 @@ o = softmax(q Kᵀ / sqrt(d)) V        q is 1 x d,  K and V are T x d
 
 That is roughly `4Td` floating point operations against roughly `8Td` bytes of traffic, so arithmetic intensity is **0.5 FLOP/byte**. The A40's ridge point is **53.7 FLOP/byte**. Decode attention sits two orders of magnitude to the left of the ridge, so the only headroom that exists is bandwidth headroom.
 
-![Roofline for the A40](docs/figures/roofline.png)
+<p align="center">
+  <img src="docs/figures/roofline.png" alt="Roofline for the A40" width="540">
+</p>
 
 ## Results
 
 ### Kernel throughput at T = 2,097,152
 
-![Kernel throughput against sequence length](docs/figures/kernelthroughput.png)
+<p align="center">
+  <img src="docs/figures/kernelthroughput.png" alt="Kernel throughput against sequence length" width="540">
+</p>
 
 The baseline is not badly written. It uses tree reduction and coalesced access throughout. Its problem is structural: the softmax kernel runs on a single 128 thread block regardless of `T`, so it is an O(T) serial stage. Its throughput actually **falls** from 33 to 17 GiB/s as sequences grow, while flash decode climbs from 146 to 476.
 
 ### Split-K block count sweep
 
-![Peak throughput per split-K block count](docs/figures/blockpeak.png)
+<p align="center">
+  <img src="docs/figures/blockpeak.png" alt="Peak throughput per split-K block count" width="500">
+</p>
 
 Below 64 blocks there are too few blocks to occupy all 84 SMs. Above 256, chunks shrink below the size that sustains efficient memory transactions and the reduce kernel has more partials to merge.
 
 ### Capacity under fragmentation, 4 GB budget, actual_len = 512
 
-![Sequences fitting a 4 GB budget](docs/figures/capacity.png)
+<p align="center">
+  <img src="docs/figures/capacity.png" alt="Sequences fitting a 4 GB budget" width="540">
+</p>
 
 Contiguous capacity halves every time `max_seq_len` doubles, because every slot reserves the configured maximum whether or not the sequence uses it. Paged capacity does not move, because a sequence only ever holds the pages it has filled.
 
 ### Page size sweep, 64 sequences, actual_len = 512
 
-![Paged pool throughput across page sizes](docs/figures/pagesize.png)
+<p align="center">
+  <img src="docs/figures/pagesize.png" alt="Paged pool throughput across page sizes" width="500">
+</p>
 
 Perfectly flat. Only `page_size = 512` recovers the contiguous number, and only because one page then covers the whole sequence, removing the indirection entirely.
 
@@ -67,19 +79,25 @@ Perfectly flat. Only `page_size = 512` recovers the contiguous number, and only 
 
 Standard attention needs every score before it can normalize. Flash decoding breaks that dependency with an online softmax: each block keeps a running maximum and sum over its own chunk, so the partial results stay composable and no global barrier is needed during the parallel phase.
 
-![Split-K flash decode dataflow](docs/figures/splitk.png)
+<p align="center">
+  <img src="docs/figures/splitk.png" alt="Split-K flash decode dataflow" width="560">
+</p>
 
 ### Where the paged overhead comes from
 
 Both pools feed the same templated kernel, so memory layout is the only variable between them. The difference is entirely in how an address gets formed:
 
-![Address resolution in the two accessors](docs/figures/indirection.png)
+<p align="center">
+  <img src="docs/figures/indirection.png" alt="Address resolution in the two accessors" width="540">
+</p>
 
 For a kernel whose speed is decided purely by how fast it streams bytes, a stall sitting on the critical path converts directly into lost throughput. Because that block table load happens on every element access rather than once per page, its cost does not shrink when pages get bigger, which is exactly what the page size sweep shows.
 
 ### The memory layouts
 
-![Contiguous versus paged KV allocation](docs/figures/layout.png)
+<p align="center">
+  <img src="docs/figures/layout.png" alt="Contiguous versus paged KV allocation" width="820">
+</p>
 
 Both pools implement one interface, so the kernel never knows which is in use:
 
@@ -161,7 +179,7 @@ Every GPU kernel is validated against the CPU reference for `d` in {8, 64, 128} 
 
 ## Known limitations
 
-These bound how far the numbers above generalize, and are stated in full in the accompanying write up.
+These bound how far the numbers above generalize, and are stated in full in [the paper](https://emaanheidari.com/decode_attention.pdf).
 
 - **The 1.79x is an upper bound.** The paged decode path copies the active block table host to device on every call, and the contiguous path has no equivalent transfer. Some of the gap is that copy rather than indirection.
 - **Pages are handed out sequentially.** A sequence admitted into an empty pool receives physically consecutive pages, so both layouts present similar address streams. These measurements do not capture the locality loss a fragmented pool would cause.
