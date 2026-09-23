@@ -2,7 +2,7 @@
 
 A from-scratch CUDA implementation of **flash decoding** and **PagedAttention** ([Kwon et al., SOSP 2023](https://arxiv.org/abs/2309.06180)), built to answer one question: *what does paged memory management actually cost at the kernel level?*
 
-[![Read the paper](https://img.shields.io/badge/Read%20the%20paper-PDF-b31b1b?style=for-the-badge)](https://emaanheidari.com/decode_attention.pdf)
+**[Read the paper](https://emaanheidari.com/decode_attention.pdf)**
 
 ![CUDA](https://img.shields.io/badge/CUDA-12-76B900?logo=nvidia&logoColor=white)
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C?logo=cplusplus&logoColor=white)
