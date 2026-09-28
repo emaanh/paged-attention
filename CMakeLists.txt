@@ -11,7 +11,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-set(CMAKE_CUDA_ARCHITECTURES native)
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES native)
+endif()
 
 find_package(CUDAToolkit REQUIRED)
 include(FetchContent)
@@ -29,6 +31,15 @@ target_include_directories(attention PUBLIC src/attention include)
 # -pedantic confuses nvcc; restrict warning flags to C++ sources only.
 target_compile_options(attention PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -pedantic>)
 target_link_libraries(attention PRIVATE CUDA::cudart)
+
+# Multi-head paged decode: split-KV flash decoding, GQA, fused page lookup, FP16/FP8 KV.
+add_library(decode STATIC
+    src/decode/decode.cu
+    src/decode/paged_kv_cache.cu
+)
+target_include_directories(decode PUBLIC src include)
+target_compile_options(decode PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--use_fast_math -lineinfo>)
+target_link_libraries(decode PUBLIC CUDA::cudart)
 
 #testing driver: adds a main to the shared library to make it runnable
 add_executable(dev src/main.cpp)
@@ -53,8 +64,12 @@ enable_testing()
     )
     target_link_libraries(unit_tests PRIVATE attention GTest::gtest_main)
 
+    add_executable(decode_tests tests/test_paged_decode.cu)
+    target_link_libraries(decode_tests PRIVATE decode GTest::gtest_main)
+
     include(GoogleTest)
     gtest_discover_tests(unit_tests)
+    gtest_discover_tests(decode_tests)
 
 #benchmark
 FetchContent_Declare(
@@ -79,3 +94,7 @@ target_link_libraries(profile_flash PRIVATE attention)
 
 add_executable(bench_pool bench/bench_pool.cu)
 target_link_libraries(bench_pool PRIVATE attention benchmark::benchmark_main)
+
+add_executable(bench_decode bench/bench_decode.cu)
+target_link_libraries(bench_decode PRIVATE decode)
+target_compile_options(bench_decode PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>)
