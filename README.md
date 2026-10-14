@@ -1,5 +1,9 @@
 # Paged Attention
 
+<p align="center">
+  <img src="docs/figures/decode_overview.svg" alt="Paged split-KV decode: block table and paged KV pool in HBM, cp.async into shared memory, per-warp QKᵀ, softmax and PV, stream-K tiles across CTAs" width="900">
+</p>
+
 A paged flash-decoding kernel written from scratch in C++ and CUDA. It does split-KV decoding with online softmax, runs GQA on tensor cores, does the page-table lookup inside the load, and can store the KV cache in FP8. On an H100 it's within a few percent of FlashInfer.
 
 ### [Read the paper (PDF)](https://emaanheidari.com/decode_attention.pdf)
