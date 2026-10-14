@@ -1,4 +1,4 @@
-# Paged Attention
+# Paged Flash-Decoding at Memory Speed
 
 <p align="center">
   <img src="docs/figures/decode_overview.svg" alt="Paged split-KV decode: block table and paged KV pool in HBM, cp.async into shared memory, per-warp QKᵀ, softmax and PV, stream-K tiles across CTAs" width="900">
