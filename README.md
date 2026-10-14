@@ -1,7 +1,7 @@
 # Paged Flash-Decoding at Memory Speed
 
 <p align="center">
-  <img src="docs/figures/decode_overview.svg" alt="Paged split-KV decode: block table and paged KV pool in HBM, cp.async into shared memory, then per-warp QKᵀ, softmax and PV on tensor cores" width="520">
+  <img src="docs/figures/decode_overview.png" alt="Paged split-KV decode: block table and paged KV pool in HBM, cp.async into shared memory, then per-warp QKᵀ, softmax and PV on tensor cores" width="520">
 </p>
 
 A paged flash-decoding kernel written from scratch in C++ and CUDA. It does split-KV decoding with online softmax, runs GQA on tensor cores, does the page-table lookup inside the load, and can store the KV cache in FP8. On an H100 it's within a few percent of FlashInfer.
